@@ -22,6 +22,15 @@ const resizeBubble  = document.getElementById('resize-bubble');
 const stripMetadata = document.getElementById('strip-metadata');
 const autoOrient    = document.getElementById('auto-orient');
 
+const sharpnessSlider  = document.getElementById('sharpness-slider');
+const sharpnessBubble  = document.getElementById('sharpness-bubble');
+const contrastSlider   = document.getElementById('contrast-slider');
+const contrastBubble   = document.getElementById('contrast-bubble');
+const brightnessSlider = document.getElementById('brightness-slider');
+const brightnessBubble = document.getElementById('brightness-bubble');
+const blurSlider       = document.getElementById('blur-slider');
+const blurBubble       = document.getElementById('blur-bubble');
+
 const settingsPanel    = document.getElementById('settings-panel');
 const uploadAnotherBtn = document.getElementById('upload-another-btn');
 const optimizeBtn      = document.getElementById('optimize-btn');
@@ -45,8 +54,12 @@ function positionBubble(slider, bubble, suffix) {
   bubble.textContent = val + (suffix || '');
 }
 
-function updateQualityBubble() { positionBubble(qualitySlider, qualityBubble, ''); }
-function updateResizeBubble()  { positionBubble(resizeSlider,  resizeBubble,  '%'); }
+function updateQualityBubble()    { positionBubble(qualitySlider,    qualityBubble,    ''); }
+function updateResizeBubble()     { positionBubble(resizeSlider,     resizeBubble,     '%'); }
+function updateSharpnessBubble()  { positionBubble(sharpnessSlider,  sharpnessBubble,  ''); }
+function updateContrastBubble()   { positionBubble(contrastSlider,   contrastBubble,   ''); }
+function updateBrightnessBubble() { positionBubble(brightnessSlider, brightnessBubble, ''); }
+function updateBlurBubble()       { positionBubble(blurSlider,       blurBubble,       ''); }
 
 // Update quality slider max limit based on selected preset
 function updateQualityMax() {
@@ -66,11 +79,13 @@ function updateQualityMax() {
 
 function updateEstimated() {
   const preset = document.querySelector('input[name=preset]:checked')?.value ?? 'balanced';
-  document.getElementById('est-quality').textContent =
-    qualityGroup.hidden ? 'N/A' : qualitySlider.value;
-  document.getElementById('est-size').textContent   = resizeSlider.value + '%';
-  document.getElementById('est-meta').textContent   = stripMetadata.checked ? 'Stripped' : 'Preserved';
-  document.getElementById('est-preset').textContent = PRESET_LABELS[preset] ?? preset;
+  document.getElementById('est-quality').textContent = qualityGroup.hidden ? 'N/A' : qualitySlider.value;
+  document.getElementById('est-size').textContent    = resizeSlider.value + '%';
+  document.getElementById('est-meta').textContent    = stripMetadata.checked ? 'Stripped' : 'Preserved';
+  document.getElementById('est-preset').textContent  = PRESET_LABELS[preset] ?? preset;
+  const fmt = document.querySelector('input[name=target_format]:checked')?.value ?? '';
+  const FORMAT_LABELS = { '': 'Auto', 'jpeg': 'JPEG', 'png': 'PNG', 'webp': 'WebP' };
+  document.getElementById('est-format').textContent  = FORMAT_LABELS[fmt] ?? 'Auto';
 }
 
 // ── Controls wiring ───────────────────────────────────────────────────────────
@@ -87,9 +102,21 @@ resizeSlider.addEventListener('input',  () => { updateResizeBubble();  updateEst
 stripMetadata.addEventListener('change', updateEstimated);
 autoOrient.addEventListener('change',   updateEstimated);
 
+sharpnessSlider.addEventListener('input',  () => { updateSharpnessBubble();  updateEstimated(); });
+contrastSlider.addEventListener('input',   () => { updateContrastBubble();   updateEstimated(); });
+brightnessSlider.addEventListener('input', () => { updateBrightnessBubble(); updateEstimated(); });
+blurSlider.addEventListener('input',       () => { updateBlurBubble();       updateEstimated(); });
+document.querySelectorAll('input[name=target_format]').forEach(r =>
+  r.addEventListener('change', updateEstimated)
+);
+
 // Initialise bubbles and summary on load
 updateQualityBubble();
 updateResizeBubble();
+updateSharpnessBubble();
+updateContrastBubble();
+updateBrightnessBubble();
+updateBlurBubble();
 updateEstimated();
 
 // ── Drag-drop wiring ──────────────────────────────────────────────────────────
@@ -220,6 +247,11 @@ function uploadFile(file) {
   fd.append('strip_metadata', stripMetadata.checked ? 'true' : 'false');
   fd.append('auto_orient',    autoOrient.checked    ? 'true' : 'false');
   fd.append('preset',         document.querySelector('input[name=preset]:checked').value);
+  fd.append('sharpness',     sharpnessSlider.value);
+  fd.append('contrast',      contrastSlider.value);
+  fd.append('brightness',    brightnessSlider.value);
+  fd.append('blur',          blurSlider.value);
+  fd.append('target_format', document.querySelector('input[name=target_format]:checked').value);
 
   const xhr = new XMLHttpRequest();
 
@@ -274,7 +306,8 @@ async function renderResult(data) {
 
     // Download button
     downloadBtn.href     = currentAfterUrl;
-    downloadBtn.download = `optimized_${data.session_id.slice(0, 8)}`;
+    const ext = data.output_ext || 'jpg';
+    downloadBtn.download = `optimized_${data.session_id.slice(0, 8)}.${ext}`;
     downloadBtn.hidden   = false;
 
     // Clean up server temp files — blob is now in memory

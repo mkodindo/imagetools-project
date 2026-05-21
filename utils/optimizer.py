@@ -1,6 +1,6 @@
 import os
 
-from PIL import Image, ImageOps
+from PIL import Image, ImageEnhance, ImageFilter, ImageOps
 from PIL.PngImagePlugin import PngInfo
 
 try:
@@ -9,6 +9,7 @@ except ImportError:
     pass
 
 _PRESET_QUALITY_MAX = {'speed': 80, 'balanced': 90, 'max': 95}
+_FMT_TO_EXT = {'JPEG': 'jpg', 'PNG': 'png', 'WEBP': 'webp'}
 
 
 def optimize_image(input_path: str, output_path: str, config, opts: dict | None = None) -> dict:
@@ -30,10 +31,20 @@ def optimize_image(input_path: str, output_path: str, config, opts: dict | None 
         preset = 'balanced'
     quality = min(quality, _PRESET_QUALITY_MAX[preset])
 
+    sharpness  = max(0, min(200, int(opts.get('sharpness',  100))))
+    contrast   = max(0, min(200, int(opts.get('contrast',   100))))
+    brightness = max(0, min(200, int(opts.get('brightness', 100))))
+    blur       = max(0, min(10,  int(opts.get('blur', 0))))
+    target_fmt = opts.get('target_format', '').upper()
+    if target_fmt not in ('', 'JPEG', 'PNG', 'WEBP'):
+        target_fmt = ''
+
     original_size = os.path.getsize(input_path)
 
     with Image.open(input_path) as img:
         fmt = img.format  # "JPEG", "PNG", or "WEBP"
+        output_fmt = target_fmt if target_fmt else fmt
+        output_ext = _FMT_TO_EXT.get(output_fmt, 'jpg')
 
         # Capture metadata before any transformation
         exif_bytes = img.info.get('exif', b'')
@@ -43,10 +54,26 @@ def optimize_image(input_path: str, output_path: str, config, opts: dict | None 
         if auto_orient:
             img = ImageOps.exif_transpose(img)
 
-        if fmt == "JPEG" and img.mode in ("RGBA", "P"):
-            img = img.convert("RGB")
-        elif fmt in ("PNG", "WEBP") and img.mode == "P":
+        if output_fmt == "JPEG":
+            if img.mode == "P":
+                img = img.convert("RGBA")
+            if img.mode == "RGBA":
+                bg = Image.new("RGB", img.size, (255, 255, 255))
+                bg.paste(img, mask=img.split()[3])
+                img = bg
+            elif img.mode != "RGB":
+                img = img.convert("RGB")
+        elif output_fmt in ("PNG", "WEBP") and img.mode == "P":
             img = img.convert("RGBA")
+
+        if sharpness != 100:
+            img = ImageEnhance.Sharpness(img).enhance(sharpness / 100)
+        if contrast != 100:
+            img = ImageEnhance.Contrast(img).enhance(contrast / 100)
+        if brightness != 100:
+            img = ImageEnhance.Brightness(img).enhance(brightness / 100)
+        if blur > 0:
+            img = img.filter(ImageFilter.GaussianBlur(radius=blur))
 
         if resize_pct != 100:
             w, h = img.size
@@ -59,18 +86,18 @@ def optimize_image(input_path: str, output_path: str, config, opts: dict | None 
             img = _resize_if_needed(img, max_dim)
 
         width, height = img.size
-        save_kwargs = _build_save_kwargs(fmt, quality, preset)
+        save_kwargs = _build_save_kwargs(output_fmt, quality, preset)
 
         if not strip_meta:
-            if fmt in ("JPEG", "WEBP") and exif_bytes:
+            if output_fmt in ("JPEG", "WEBP") and exif_bytes:
                 save_kwargs['exif'] = exif_bytes
-            elif fmt == "PNG" and png_text:
+            elif output_fmt == "PNG" and png_text:
                 pnginfo = PngInfo()
                 for k, v in png_text.items():
                     pnginfo.add_text(k, v)
                 save_kwargs['pnginfo'] = pnginfo
 
-        img.save(output_path, format=fmt, **save_kwargs)
+        img.save(output_path, format=output_fmt, **save_kwargs)
 
     optimized_size = os.path.getsize(output_path)
     savings_pct = (
@@ -83,6 +110,7 @@ def optimize_image(input_path: str, output_path: str, config, opts: dict | None 
         "savings_pct":    savings_pct,
         "width":          width,
         "height":         height,
+        "output_ext":     output_ext,
     }
 
 

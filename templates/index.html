@@ -94,6 +94,88 @@
 
       </div>
 
+      <div class="sliders-row">
+
+        <div class="slider-group">
+          <div class="slider-top-row">
+            <span class="slider-label">Netteté:</span>
+            <div class="slider-wrap">
+              <div class="slider-bubble" id="sharpness-bubble">100</div>
+              <input type="range" id="sharpness-slider" min="0" max="200" value="100" step="1">
+            </div>
+          </div>
+          <div class="slider-limits">
+            <span>0</span><span>200</span>
+          </div>
+        </div>
+
+        <div class="slider-group">
+          <div class="slider-top-row">
+            <span class="slider-label">Contraste:</span>
+            <div class="slider-wrap">
+              <div class="slider-bubble" id="contrast-bubble">100</div>
+              <input type="range" id="contrast-slider" min="0" max="200" value="100" step="1">
+            </div>
+          </div>
+          <div class="slider-limits">
+            <span>0</span><span>200</span>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="sliders-row">
+
+        <div class="slider-group">
+          <div class="slider-top-row">
+            <span class="slider-label">Luminosité:</span>
+            <div class="slider-wrap">
+              <div class="slider-bubble" id="brightness-bubble">100</div>
+              <input type="range" id="brightness-slider" min="0" max="200" value="100" step="1">
+            </div>
+          </div>
+          <div class="slider-limits">
+            <span>0</span><span>200</span>
+          </div>
+        </div>
+
+        <div class="slider-group">
+          <div class="slider-top-row">
+            <span class="slider-label">Flou:</span>
+            <div class="slider-wrap">
+              <div class="slider-bubble" id="blur-bubble">0</div>
+              <input type="range" id="blur-slider" min="0" max="10" value="0" step="1">
+            </div>
+          </div>
+          <div class="slider-limits">
+            <span>0</span><span>10</span>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="format-row">
+        <span class="slider-label">Format:</span>
+        <div class="preset-buttons" role="group" aria-label="Format de sortie">
+          <label class="preset-btn">
+            <input type="radio" name="target_format" value="" checked>
+            <span>Auto</span>
+          </label>
+          <label class="preset-btn">
+            <input type="radio" name="target_format" value="jpeg">
+            <span>JPEG</span>
+          </label>
+          <label class="preset-btn">
+            <input type="radio" name="target_format" value="png">
+            <span>PNG</span>
+          </label>
+          <label class="preset-btn">
+            <input type="radio" name="target_format" value="webp">
+            <span>WebP</span>
+          </label>
+        </div>
+      </div>
+
       <div class="toggles-row">
         <label class="ios-toggle-wrap">
           <input type="checkbox" id="strip-metadata" class="ios-toggle-input" checked>
@@ -113,6 +195,7 @@
         <div>Size: <span id="est-size">100%</span></div>
         <div>Metadata: <span id="est-meta">Stripped</span></div>
         <div>Preset: <span id="est-preset">Balanced</span></div>
+        <div>Format: <span id="est-format">Auto</span></div>
       </div>
 
     </div>

@@ -61,12 +61,40 @@ def create_app(config_class=Config):
         if preset not in _VALID_PRESETS:
             preset = 'balanced'
 
+        try:
+            sharpness = max(0, min(200, int(request.form.get('sharpness', 100))))
+        except (TypeError, ValueError):
+            sharpness = 100
+        try:
+            contrast = max(0, min(200, int(request.form.get('contrast', 100))))
+        except (TypeError, ValueError):
+            contrast = 100
+        try:
+            brightness = max(0, min(200, int(request.form.get('brightness', 100))))
+        except (TypeError, ValueError):
+            brightness = 100
+        try:
+            blur = max(0, min(10, int(request.form.get('blur', 0))))
+        except (TypeError, ValueError):
+            blur = 0
+
+        _VALID_FORMATS = {'', 'jpeg', 'png', 'webp'}
+        target_format = request.form.get('target_format', '').lower()
+        if target_format not in _VALID_FORMATS:
+            target_format = ''
+        target_fmt_upper = {'jpeg': 'JPEG', 'png': 'PNG', 'webp': 'WEBP'}.get(target_format, '')
+
         opts = {
             'quality':        quality,
             'resize_pct':     resize_pct,
             'strip_metadata': strip_metadata,
             'auto_orient':    auto_orient,
             'preset':         preset,
+            'sharpness':      sharpness,
+            'contrast':       contrast,
+            'brightness':     brightness,
+            'blur':           blur,
+            'target_format':  target_fmt_upper,
         }
 
         session_id = uuid.uuid4().hex
@@ -74,11 +102,16 @@ def create_app(config_class=Config):
         os.makedirs(session_dir, exist_ok=True)
 
         ext = file.filename.rsplit(".", 1)[-1].lower()
-        original_path  = os.path.join(session_dir, f"original.{ext}")
-        optimized_path = os.path.join(session_dir, f"optimized.{ext}")
+        original_path     = os.path.join(session_dir, f"original.{ext}")
+        optimized_path_tmp = os.path.join(session_dir, f"optimized.{ext}")
         file.save(original_path)
 
-        stats = optimize_image(original_path, optimized_path, app.config, opts)
+        stats = optimize_image(original_path, optimized_path_tmp, app.config, opts)
+
+        output_ext = stats["output_ext"]
+        optimized_path_final = os.path.join(session_dir, f"optimized.{output_ext}")
+        if optimized_path_tmp != optimized_path_final:
+            os.rename(optimized_path_tmp, optimized_path_final)
 
         return jsonify(
             session_id=session_id,
@@ -87,6 +120,7 @@ def create_app(config_class=Config):
             savings_pct=stats["savings_pct"],
             width=stats["width"],
             height=stats["height"],
+            output_ext=output_ext,
         )
 
     @app.route("/preview/<session_id>/<which>")
