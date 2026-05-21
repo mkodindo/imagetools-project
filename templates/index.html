@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Image Optimizer</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Image Optimizer</h1>
+      <p class="subtitle">JPEG &middot; PNG &middot; WebP &mdash; max 25 Mo</p>
+    </header>
+
+    <!-- Zone de dépôt (visible initialement) -->
+    <div id="drop-zone" role="button" tabindex="0" aria-label="Déposez une image ici ou cliquez pour parcourir">
+      <div class="drop-icon">&#8659;</div>
+      <p class="drop-label">Glissez-déposez une image ici</p>
+      <p class="drop-sub">ou <span class="browse-link">parcourir</span></p>
+      <input type="file" id="file-input" accept=".jpg,.jpeg,.png,.webp" hidden>
+    </div>
+
+    <!-- Aperçu Avant / Après (masqué initialement) -->
+    <div id="preview-section" hidden>
+      <div class="preview-col">
+        <h2 class="preview-label">Before</h2>
+        <div class="img-wrap">
+          <img id="img-before" alt="Image originale">
+          <div class="img-overlay" id="overlay-before"></div>
+        </div>
+      </div>
+      <div class="preview-col">
+        <h2 class="preview-label">After</h2>
+        <div class="img-wrap">
+          <div class="img-placeholder" id="after-placeholder"></div>
+          <img id="img-after" alt="Image optimisée" hidden>
+          <div class="img-overlay img-overlay--after" id="overlay-after" hidden></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bannière d'erreur -->
+    <div id="error-banner" role="alert" hidden></div>
+
+    <!-- Panel de paramètres -->
+    <div id="settings-panel" hidden>
+
+      <div class="settings-header">
+        <h2 class="settings-title">Optimization Settings</h2>
+        <div class="preset-buttons" role="group" aria-label="Préréglage encodeur">
+          <label class="preset-btn">
+            <input type="radio" name="preset" value="balanced" checked>
+            <span>Balanced</span>
+          </label>
+          <label class="preset-btn">
+            <input type="radio" name="preset" value="speed">
+            <span>Speed</span>
+          </label>
+          <label class="preset-btn">
+            <input type="radio" name="preset" value="max">
+            <span>Max Quality</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="sliders-row">
+
+        <div class="slider-group" id="quality-group">
+          <div class="slider-top-row">
+            <span class="slider-label">Quality:</span>
+            <div class="slider-wrap">
+              <div class="slider-bubble" id="quality-bubble">85</div>
+              <input type="range" id="quality-slider" min="1" max="90" value="85">
+            </div>
+          </div>
+          <div class="slider-limits">
+            <span>1</span><span>90</span>
+          </div>
+        </div>
+
+        <div class="slider-group">
+          <div class="slider-top-row">
+            <span class="slider-label">Resize:</span>
+            <div class="slider-wrap">
+              <div class="slider-bubble" id="resize-bubble">100%</div>
+              <input type="range" id="resize-slider" min="10" max="200" value="100" step="5">
+            </div>
+          </div>
+          <div class="slider-limits">
+            <span>10%</span><span>200%</span>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="toggles-row">
+        <label class="ios-toggle-wrap">
+          <input type="checkbox" id="strip-metadata" class="ios-toggle-input" checked>
+          <span class="ios-toggle-track"><span class="ios-toggle-thumb"></span></span>
+          <span class="toggle-text">Strip Metadata</span>
+        </label>
+        <label class="ios-toggle-wrap">
+          <input type="checkbox" id="auto-orient" class="ios-toggle-input" checked>
+          <span class="ios-toggle-track"><span class="ios-toggle-thumb"></span></span>
+          <span class="toggle-text">Auto-Orient</span>
+        </label>
+      </div>
+
+      <div class="estimated-settings">
+        <div><strong>Estimated Settings:</strong></div>
+        <div>Quality: <span id="est-quality">85</span></div>
+        <div>Size: <span id="est-size">100%</span></div>
+        <div>Metadata: <span id="est-meta">Stripped</span></div>
+        <div>Preset: <span id="est-preset">Balanced</span></div>
+      </div>
+
+    </div>
+
+    <!-- Barre de progression -->
+    <div id="progress-wrap" hidden>
+      <div id="progress-bar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+    </div>
+
+    <!-- Boutons d'action -->
+    <div id="action-buttons">
+      <button id="upload-another-btn" class="btn btn-outline" disabled>Upload Another</button>
+      <button id="optimize-btn" class="btn btn-primary" disabled>Optimize Image</button>
+      <a id="download-btn" class="btn btn-primary" hidden download>Download Optimized</a>
+    </div>
+
+  </div>
+
+  <script src="{{ url_for('static', filename='js/upload.js') }}"></script>
+</body>
+</html>
